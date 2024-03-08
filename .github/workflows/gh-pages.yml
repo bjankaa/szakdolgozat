@@ -1,0 +1,21 @@
+name: Deploy GitHub page
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install dependencies 🥚
+        run: sudo apt-get install texlive-xetex
+      - name: Run Make 🐣
+        run: ( cd documents/thesis ; make)
+      - name: Deploy 🚀
+        uses: JamesIves/github-pages-deploy-action@3.7.1
+        with:
+          GITHUB_TOKEN: ${{ secrets.SECRET }}
+          BRANCH: gh-pages
+          FOLDER: documents/thesis/public
+          CLEAN: true 
