@@ -1,21 +1,58 @@
-name: Deploy GitHub page
+name: Build and Deploy LaTeX PDF to GitHub Pages
 
 on:
+  push:
+    branches: [$default-branch]
+
   workflow_dispatch:
 
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
 jobs:
-  deploy:
-    runs-on: ubuntu-18.04
+  build:
+    runs-on: ubuntu-latest
+
+    env:
+      SOURCE_DIR: ./documents/thesis
+      BUILD_DIR: ./documents/pdf
+      INDEX_HTML: ./documents/thesis/public/index.html
+
     steps:
-      - uses: actions/checkout@v2
-      - name: Install dependencies 🥚
-        run: sudo apt-get install texlive-xetex
-      - name: Run Make 🐣
-        run: ( cd documents/thesis ; make)
-      - name: Deploy 🚀
-        uses: JamesIves/github-pages-deploy-action@3.7.1
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install LaTeX
+        run: sudo apt-get install -y texlive-latex-extra
+
+      - name: Build PDF with pdflatex
+        run: |
+          mkdir -p ${{ env.BUILD_DIR }}
+          make -C ${{ env.SOURCE_DIR }} pdflatex
+          mv ${{ env.INDEX_HTML }} ${{ env.BUILD_DIR }}/index.html
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
         with:
-          GITHUB_TOKEN: ${{ secrets.SECRET }}
-          BRANCH: gh-pages
-          FOLDER: documents/thesis/public
-          CLEAN: true 
+            path: ${{ env.BUILD_DIR }}
+
+  deploy:
+    needs: build
+
+    permissions:
+      pages: write
+      id-token: write
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
