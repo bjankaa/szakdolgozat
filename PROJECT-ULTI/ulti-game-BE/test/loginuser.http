@@ -1,0 +1,8 @@
+POST  http://localhost:5173/auth
+Content-Type: application/json
+
+{
+    "email": "test@g.hu",
+    "password": "testsdsd",
+    "state": "login"
+}
